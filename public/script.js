@@ -1,9 +1,10 @@
 let msgData = [];
+// 【新增】获取昵称输入框
+const nicknameInput = document.getElementById('nicknameInput');
 const msgInput = document.getElementById('msgInput');
 const sendBtn = document.getElementById('sendBtn');
 const msgList = document.getElementById('msgList');
 const charCount = document.getElementById('charCount');
-
 
 function renderMessages() {
     msgList.innerHTML = ''; 
@@ -18,9 +19,10 @@ function renderMessages() {
         const divMeta = document.createElement('div');
         divMeta.className = 'msg-meta';
         
-        
+        // 【修改】显示昵称
         divMeta.innerHTML = `
             <div class="meta-left">
+                <span class="nickname">👤 ${msg.nickname || '神秘人'}</span>
                 <span class="time">${msg.time}</span>
             </div>
             <div class="meta-right">
@@ -37,21 +39,20 @@ function renderMessages() {
     });
 }
 
-
 window.likeMessage = function(id) {
-        fetch(`api/messages/${id}/like`, { method: 'POST' })
-        .then(res => res.json())
-        .then(data => {
-            if(data.success) { 
-                const span = document.getElementById(`like-${id}`);
-                span.textContent = parseInt(span.textContent) + 1;
-                const msg = msgData.find(m => m.id === id);
-                if(msg) msg.likes = (msg.likes || 0) + 1;
-            }
-        })
-        .catch(err => console.error('点赞失败', err));
+    // 注意：这里去掉了开头的斜杠，适配相对路径
+    fetch(`api/messages/${id}/like`, { method: 'POST' })
+    .then(res => res.json())
+    .then(data => {
+        if(data.success) { 
+            const span = document.getElementById(`like-${id}`);
+            span.textContent = parseInt(span.textContent) + 1;
+            const msg = msgData.find(m => m.id === id);
+            if(msg) msg.likes = (msg.likes || 0) + 1;
+        }
+    })
+    .catch(err => console.error('点赞失败', err));
 };
-
 
 window.deleteMessage = function(id) {
     if (!confirm("确定要删除这条树洞吗？")) return;
@@ -76,6 +77,7 @@ msgInput.addEventListener('input', function() {
 });
 
 function loadMessages() {
+    // 注意：这里去掉了开头的斜杠
     fetch('api/messages')
         .then(res => res.json())
         .then(data => {
@@ -88,16 +90,23 @@ function loadMessages() {
 
 sendBtn.onclick = () => {
     const content = msgInput.value.trim();
+    // 【新增】获取昵称
+    const nickname = nicknameInput.value.trim();
+
     if (!content) {
         alert('内容不能为空！请输入后再发送。');
         return;
     }
     sendBtn.disabled = true;
     
+    // 【修改】发送数据包含 nickname
     fetch('api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: content })
+        body: JSON.stringify({ 
+            content: content,
+            nickname: nickname 
+        })
     }).then(res => res.json())
       .then(() => {
         msgInput.value = '';
